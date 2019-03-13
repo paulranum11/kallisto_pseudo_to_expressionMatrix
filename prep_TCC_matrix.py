@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-E', '--inputMatrixec', required=True, help='Input Matrix.ec')
 parser.add_argument('-T', '--inputMatrixtsv', required=True, help='Input Matrix.tsv')
 parser.add_argument('-O', '--outputDir', required=True, help='Output Dir')
-parser.add_argument('-I', '--indexFasta', required=True, help='Provide the index fasta file used to generate the kallisto .idx')
+parser.add_argument('-I', '--indexFasta', required=False, help='Provide the index fasta file used to generate the kallisto .idx')
 #/mnt/isilon/davidson_lab/ranum/Tools/Kallisto_Index/Mus_musculus.GRCm38.cdna.all.fa
 args = parser.parse_args()
 
@@ -121,14 +121,16 @@ T = T.todense()
 #D_l1 = D_l1.todense()
 #nonzero_ex = nonzero_ex.todense()
 
-with open(output_dir+"TranscriptIDs.dat", 'w') as f:
+with open(output_dir+"2_rowNames.txt", 'w') as f:
     for row in map_rows:
         print(row, file=f)
-with open(output_dir+"TCC_matrix.dat", 'wb') as f:
+with open(output_dir+"1_expressionMatrix.txt", 'wb') as f:
     np.savetxt(f,T, delimiter="\t")
-with open(output_dir+"pwise_dist_L1.dat", 'wb') as f:
-    np.savetxt(f,D_l1, delimiter="\t")
-with open(output_dir+"nonzero_ec.dat", 'wb') as f:
-    np.savetxt(f,nonzero_ec, delimiter="\t")  
+#with open(output_dir+"2_colNames.txt", 'wb') as f:
+    
+#with open(output_dir+"pwise_dist_L1.dat", 'wb') as f:
+#    np.savetxt(f,D_l1, delimiter="\t")
+#with open(output_dir+"nonzero_ec.dat", 'wb') as f:
+#    np.savetxt(f,nonzero_ec, delimiter="\t")  
 print("DONE.")
 
