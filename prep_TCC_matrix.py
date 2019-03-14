@@ -25,7 +25,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-E', '--inputMatrixec', required=True, help='Input Matrix.ec')
 parser.add_argument('-T', '--inputMatrixtsv', required=True, help='Input Matrix.tsv')
 parser.add_argument('-O', '--outputDir', required=True, help='Output Dir')
-parser.add_argument('-I', '--indexFasta', required=False, help='Provide the index fasta file used to generate the kallisto .idx')
+parser.add_argument('-I', '--indexFasta', required=True, help='Provide the index fasta file used to generate the kallisto .idx')
+parser.add_argument('-G', '--GenesOrTranscripts', required=False, help='enter "geneIDs" or "transcriptIDs" to return a rownames as gene or transcript IDs')
 #/mnt/isilon/davidson_lab/ranum/Tools/Kallisto_Index/Mus_musculus.GRCm38.cdna.all.fa
 args = parser.parse_args()
 
@@ -41,13 +42,13 @@ output_dir = args.outputDir
 
 print("Loading index fasta..")
 
-# Create Empty Dictionaries
-transcriptID_Dict = {}
-with open(args.indexFasta, "r") as infile:
-    line_ct = 0
-    id_ct = 0
-    for line in infile:
-        if (line_ct % 2 == 0):
+if (args.GenesOrTranscripts == "transcriptIDs"):
+    print("Extracting transcript IDs..")
+    transcriptID_Dict = {}
+    with open(args.indexFasta, "r") as infile:
+        line_ct = 0
+        id_ct = 0
+        for line in infile:
             if (">" in line):
                 split1 = line.split(" ")
                 split2 = split1[0].split(">")
@@ -55,7 +56,23 @@ with open(args.indexFasta, "r") as infile:
                 #print(str(id_ct) + " " + transcriptID)
                 transcriptID_Dict[id_ct] = transcriptID
                 id_ct = id_ct + 1
-    line_ct = line_ct + 1
+            line_ct = line_ct + 1
+
+if (args.GenesOrTranscripts == "geneIDs"):
+    print("Extracting gene IDs..")
+    geneID_Dict = {}
+    with open(args.indexFasta, "r") as infile:
+        line_ct = 0
+        id_ct = 0
+        for line in infile:
+            if (">" in line):
+                split1 = line.split(" ")
+                split2 = split1[3].split(":")
+                geneID = split2[1]
+                #print(str(id_ct) + " " + transcriptID)
+                geneID_Dict[id_ct] = geneID
+                id_ct = id_ct + 1
+            line_ct = line_ct + 1
 
 print("Loading input matrix..")
 matrixTSV_List = []
@@ -70,7 +87,9 @@ equivalenceClass_Dict = {}
 with open(args.inputMatrixec, "r") as infile3:
     for line in infile3:
         split1 = line.split("\t")
-        equivalenceClass_Dict[int(split1[0])] = split1[1].split(",")
+        split2 = split1[1].rstrip()
+        split3 = split2.split(",")
+        equivalenceClass_Dict[int(split1[0])] = split3
 
 print("Loading TCCs..")
 
@@ -124,6 +143,27 @@ T = T.todense()
 with open(output_dir+"2_rowNames.txt", 'w') as f:
     for row in map_rows:
         print(row, file=f)
+
+if (args.GenesOrTranscripts == "transcriptIDs"):
+    with open(output_dir+"3_geneNames.txt", 'w') as f:
+        for row in map_rows:
+            EQgenelist = equivalenceClass_Dict[row]
+            Plist = []
+            for EQkey in EQgenelist:
+                Plist.append(transcriptID_Dict[int(EQkey)]) 
+            print('[%s]' % ', '.join(map(str, Plist)))  
+            #print('[%s]' % ', '.join(map(str, EQgenelist)))
+
+if (args.GenesOrTranscripts == "geneIDs"):
+    with open(output_dir+"3_geneNames.txt", 'w') as f:
+        for row in map_rows:
+            EQgenelist = equivalenceClass_Dict[row]
+            Plist = []
+            for EQkey in EQgenelist:
+                Plist.append(geneID_Dict[int(EQkey)])
+            print('[%s]' % ', '.join(map(str, Plist)))
+            #print('[%s]' % ', '.join(map(str, EQgenelist)))
+
 with open(output_dir+"1_expressionMatrix.txt", 'wb') as f:
     np.savetxt(f,T, delimiter="\t")
 #with open(output_dir+"2_colNames.txt", 'wb') as f:
